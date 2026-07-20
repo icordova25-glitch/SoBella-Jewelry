@@ -29,13 +29,15 @@ BACKOFFICE_PASSWORD = os.getenv('BACKOFFICE_PASSWORD', 'sobella-admin')
 
 class BackofficeHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if not self.is_authorized():
+        parsed = urlparse(self.path)
+        if parsed.path.startswith('/api/') and not self.is_authorized():
             self.send_unauthorized()
             return
         self.dispatch_request(include_body=True)
 
     def do_HEAD(self):
-        if not self.is_authorized():
+        parsed = urlparse(self.path)
+        if parsed.path.startswith('/api/') and not self.is_authorized():
             self.send_unauthorized(include_body=False)
             return
         self.dispatch_request(include_body=False)

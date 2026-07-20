@@ -16,9 +16,20 @@
 
     <main class="page-shell">
       <h1>Order history</h1>
+      <section class="admin-section" aria-labelledby="ordersLoginHeading">
+        <h2 id="ordersLoginHeading">Backoffice login</h2>
+        <form id="ordersLoginForm" class="checkout-form">
+          <input type="text" id="ordersUsername" placeholder="Username" autocomplete="username" required />
+          <input type="password" id="ordersPassword" placeholder="Password" autocomplete="current-password" required />
+          <button type="submit">Sign in</button>
+          <button type="button" id="ordersLogoutButton" class="inventory-btn secondary">Sign out</button>
+        </form>
+        <p id="ordersLoginStatus" class="char-count" role="status" aria-live="polite"></p>
+      </section>
       <div id="ordersList" class="orders-list"></div>
     </main>
 
+    <script src="auth.js"></script>
     <script src="orders.js"></script>
   </body>
 </html>

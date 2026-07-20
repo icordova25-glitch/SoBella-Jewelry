@@ -4,11 +4,51 @@ const bioForm = document.getElementById('bioForm');
 const bioText = document.getElementById('bioText');
 const bioCount = document.getElementById('bioCount');
 const bankForm = document.getElementById('bankForm');
+const loginForm = document.getElementById('loginForm');
+const adminUsername = document.getElementById('adminUsername');
+const adminPassword = document.getElementById('adminPassword');
+const loginStatus = document.getElementById('loginStatus');
+const logoutButton = document.getElementById('logoutButton');
 const productRefreshChannel = window.BroadcastChannel ? new BroadcastChannel('sobella-products') : null;
 const apiBase = window.location.protocol === 'file:' ? 'http://localhost:3001' : window.location.origin;
+const backofficeAuth = window.sobellaBackofficeAuth;
 
 function apiUrl(path) {
   return `${apiBase}${path}`;
+}
+
+function setLoginStatus(message, isError = false) {
+  if (!loginStatus) {
+    return;
+  }
+  loginStatus.textContent = message;
+  loginStatus.style.color = isError ? '#c0392b' : '';
+}
+
+function updateLoginForm() {
+  const credentials = backofficeAuth?.getCredentials();
+  if (adminUsername) {
+    adminUsername.value = credentials?.username || '';
+  }
+  if (adminPassword) {
+    adminPassword.value = credentials?.password || '';
+  }
+  if (logoutButton) {
+    logoutButton.disabled = !credentials;
+  }
+  setLoginStatus(credentials ? `Signed in as ${credentials.username}` : 'Sign in to load and update backoffice data.');
+}
+
+async function backofficeRequest(path, options = {}) {
+  if (!backofficeAuth) {
+    throw new Error('Backoffice auth helper is unavailable.');
+  }
+  const response = await backofficeAuth.fetch(apiUrl(path), options);
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Request failed with status ${response.status}`);
+  }
+  return response;
 }
 
 function notifyProductRefresh() {
@@ -19,7 +59,7 @@ function notifyProductRefresh() {
 }
 
 async function loadBusinessBio() {
-  const response = await fetch(apiUrl('/api/business-bio'));
+  const response = await backofficeRequest('/api/business-bio');
   const data = await response.json();
   if (bioText) {
     bioText.value = data.bio || '';
@@ -30,7 +70,7 @@ async function loadBusinessBio() {
 }
 
 async function loadBankInfo() {
-  const response = await fetch(apiUrl('/api/business-bank-info'));
+  const response = await backofficeRequest('/api/business-bank-info');
   const data = await response.json();
   if (bankForm) {
     bankForm.querySelector('#accountHolder').value = data.accountHolder || '';
@@ -41,7 +81,7 @@ async function loadBankInfo() {
 }
 
 async function loadAdminProducts() {
-  const response = await fetch(apiUrl('/api/admin/products'));
+  const response = await backofficeRequest('/api/admin/products');
   const products = await response.json();
   adminProducts.innerHTML = '';
 
@@ -128,7 +168,7 @@ function showImagePreview(imageUrl) {
 }
 
 async function updateStock(sku, action) {
-  const response = await fetch(apiUrl(`/api/admin/products/${sku}`), {
+  const response = await backofficeRequest(`/api/admin/products/${sku}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ stock: action === 'restock' ? 1 : -1, operation: action }),
@@ -137,6 +177,15 @@ async function updateStock(sku, action) {
   if (result.success || result.deleted) {
     loadAdminProducts();
     notifyProductRefresh();
+  }
+}
+
+async function loadBackofficeData() {
+  try {
+    await Promise.all([loadAdminProducts(), loadBusinessBio(), loadBankInfo()]);
+    updateLoginForm();
+  } catch (error) {
+    setLoginStatus(error.message || 'Sign in required.', true);
   }
 }
 
@@ -149,29 +198,39 @@ if (bioForm && bioText) {
 
   bioForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    await fetch(apiUrl('/api/business-bio'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bio: bioText.value.slice(0, 500) }),
-    });
-    loadBusinessBio();
+    try {
+      await backofficeRequest('/api/business-bio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bio: bioText.value.slice(0, 500) }),
+      });
+      setLoginStatus('Business bio saved.');
+      loadBusinessBio();
+    } catch (error) {
+      setLoginStatus(error.message, true);
+    }
   });
 }
 
 if (bankForm) {
   bankForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    await fetch(apiUrl('/api/business-bank-info'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        accountHolder: bankForm.querySelector('#accountHolder').value,
-        bankName: bankForm.querySelector('#bankName').value,
-        accountNumber: bankForm.querySelector('#accountNumber').value,
-        routingNumber: bankForm.querySelector('#routingNumber').value,
-      }),
-    });
-    loadBankInfo();
+    try {
+      await backofficeRequest('/api/business-bank-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountHolder: bankForm.querySelector('#accountHolder').value,
+          bankName: bankForm.querySelector('#bankName').value,
+          accountNumber: bankForm.querySelector('#accountNumber').value,
+          routingNumber: bankForm.querySelector('#routingNumber').value,
+        }),
+      });
+      setLoginStatus('Bank info saved.');
+      loadBankInfo();
+    } catch (error) {
+      setLoginStatus(error.message, true);
+    }
   });
 }
 
@@ -195,16 +254,46 @@ productForm.addEventListener('submit', async (event) => {
     };
   }
 
-  await fetch(apiUrl('/api/admin/products'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  productForm.reset();
-  loadAdminProducts();
-  notifyProductRefresh();
+  try {
+    await backofficeRequest('/api/admin/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    productForm.reset();
+    setLoginStatus('Product created.');
+    loadAdminProducts();
+    notifyProductRefresh();
+  } catch (error) {
+    setLoginStatus(error.message, true);
+  }
 });
 
-loadAdminProducts();
-loadBusinessBio();
-loadBankInfo();
+if (loginForm) {
+  loginForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const username = adminUsername?.value.trim();
+    const password = adminPassword?.value.trim();
+    if (!username || !password) {
+      setLoginStatus('Enter a username and password.', true);
+      return;
+    }
+    backofficeAuth.setCredentials(username, password);
+    updateLoginForm();
+    loadBackofficeData();
+  });
+}
+
+if (logoutButton) {
+  logoutButton.addEventListener('click', () => {
+    backofficeAuth.clearCredentials();
+    if (adminPassword) {
+      adminPassword.value = '';
+    }
+    updateLoginForm();
+    adminProducts.innerHTML = '<p>Sign in to view products.</p>';
+  });
+}
+
+updateLoginForm();
+loadBackofficeData();
