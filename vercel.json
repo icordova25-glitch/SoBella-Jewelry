@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/admin/?",
+      "status": 302,
+      "headers": {
+        "Location": "/backoffice/admin.html"
+      }
+    },
+    {
+      "src": "/orders/?",
+      "status": 302,
+      "headers": {
+        "Location": "/backoffice/orders.html"
+      }
+    },
+    {
+      "src": "/backoffice/admin/?",
+      "status": 302,
+      "headers": {
+        "Location": "/backoffice/admin.html"
+      }
+    },
+    {
+      "src": "/backoffice/orders/?",
+      "status": 302,
+      "headers": {
+        "Location": "/backoffice/orders.html"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/server.js"
+    }
+  ]
+}
