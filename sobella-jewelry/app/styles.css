@@ -1,0 +1,238 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@400;500;600&display=swap");
+
+:root {
+  color-scheme: light;
+  --ink: #121212;
+  --gold: #b7935d;
+  --gold-deep: #8d6a3f;
+  --cream: #fdfaf6;
+  --cream-strong: #f3ede4;
+  --line: #e2d5c3;
+  --card: #fffdfa;
+  --shadow: 0 14px 34px rgba(85, 67, 44, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Montserrat", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.9) 0%, transparent 28%),
+    radial-gradient(circle at 80% 2%, rgba(232, 209, 179, 0.45) 0%, transparent 34%),
+    linear-gradient(140deg, #fdfbf8 0%, #f4ecdf 48%, #fbf8f2 100%);
+  background-attachment: fixed;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.6rem;
+}
+
+h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  text-transform: uppercase;
+}
+
+p {
+  line-height: 1.6;
+}
+
+.lead {
+  max-width: 700px;
+  margin-bottom: 1.4rem;
+}
+
+.site-header {
+  border-bottom: 1px solid var(--line);
+  padding: 2.4rem 1rem 1.2rem;
+  text-align: center;
+}
+
+.brand-wrap {
+  margin-bottom: 0.9rem;
+}
+
+.brand-mark {
+  margin: 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(2.8rem, 7vw, 4.2rem);
+  line-height: 1;
+  color: var(--gold-deep);
+}
+
+.brand-name {
+  margin: 0.2rem 0 0;
+  letter-spacing: 0.42em;
+  font-size: clamp(0.68rem, 1.6vw, 0.95rem);
+}
+
+.brand-tag {
+  margin: 0.8rem 0 0;
+  letter-spacing: 0.28em;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  color: #48433d;
+}
+
+.site-nav {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.site-nav a {
+  color: #2b2823;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  padding: 0.45rem 0.78rem;
+  border: 1px solid transparent;
+  transition: border-color 0.25s ease, color 0.25s ease;
+}
+
+.site-nav a:hover {
+  color: var(--gold-deep);
+  border-color: var(--line);
+}
+
+.page-wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 1.35rem 1rem 2.3rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1.1rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.panel {
+  background: linear-gradient(180deg, var(--card) 0%, #fffaf3 100%);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.panel img {
+  width: 100%;
+  border-radius: 14px;
+  margin-bottom: 0.75rem;
+}
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.product-card h3 {
+  font-size: 1.4rem;
+}
+
+.price {
+  color: var(--gold-deep);
+  font-size: 1rem;
+}
+
+.text-link {
+  color: #2f2a24;
+  font-size: 0.8rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.form input,
+.form textarea {
+  width: 100%;
+  border: 1px solid #d9cbb7;
+  border-radius: 10px;
+  padding: 0.62rem 0.7rem;
+  font: inherit;
+  background: #fffdfa;
+}
+
+.row-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.checkbox-row {
+  align-content: end;
+}
+
+.checkbox-row input {
+  width: auto;
+  margin-right: 0.5rem;
+}
+
+.cta {
+  border: 1px solid var(--gold-deep);
+  border-radius: 999px;
+  padding: 0.72rem 1.1rem;
+  background: linear-gradient(120deg, #b69361, #d0b182);
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.cta:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.1);
+}
+
+.cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+ul {
+  padding-left: 1.1rem;
+}
+
+@media (max-width: 680px) {
+  .brand-name {
+    letter-spacing: 0.24em;
+  }
+
+  .brand-tag {
+    letter-spacing: 0.14em;
+  }
+
+  .row-2 {
+    grid-template-columns: 1fr;
+  }
+}
