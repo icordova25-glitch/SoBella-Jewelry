@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import HeaderNav from "@/components/HeaderNav";
 import "./styles.css";
 
 export const metadata: Metadata = {
@@ -17,12 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <p className="brand-name">SOBELLA JEWELRY CO.</p>
             <p className="brand-tag">Wear it. Live in it. Love it.</p>
           </div>
-          <nav className="site-nav">
-            <Link href="/">Collection</Link>
-            <Link href="/products">Shop All</Link>
-            <Link href="/cart">Cart</Link>
-            <Link href="/admin">Admin</Link>
-          </nav>
+          <HeaderNav />
         </header>
         <main className="page-wrap">{children}</main>
       </body>

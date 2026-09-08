@@ -3,9 +3,9 @@ import AdminSidebar from "@/components/AdminSidebar";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: "1rem" }}>
+    <div className="admin-shell">
       <AdminSidebar />
-      <section>{children}</section>
+      <section className="admin-main">{children}</section>
     </div>
   );
 }
