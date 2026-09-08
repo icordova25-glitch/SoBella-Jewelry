@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 420" role="img" aria-label="Gallery placeholder">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f4e8d8"/>
+      <stop offset="100%" stop-color="#ead5b7"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="420" rx="28" fill="url(#bg)"/>
+  <rect x="52" y="58" width="496" height="304" rx="20" fill="#fff8ef" opacity="0.75"/>
+  <circle cx="186" cy="188" r="54" fill="#d7b07a" opacity="0.85"/>
+  <path d="M120 320l98-98 66 60 72-82 124 120H120z" fill="#c09052" opacity="0.85"/>
+  <text x="300" y="386" text-anchor="middle" font-family="Georgia, serif" font-size="24" fill="#8a6232">Gallery Placeholder 4</text>
+</svg>
