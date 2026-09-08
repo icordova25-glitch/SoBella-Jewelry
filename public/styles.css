@@ -75,6 +75,24 @@ body {
 .bio-section {
   padding: 0 2rem 2.25rem;
 }
+.category-strip {
+  padding: 0 2rem 1.2rem;
+}
+.category-strip-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1rem 1.2rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+}
+.category-strip-inner h2 {
+  margin: 0 0 0.8rem;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
 .bio-card {
   background: linear-gradient(135deg, #fffdfb 0%, #fff6ed 100%);
   border: 1px solid var(--border);
@@ -128,9 +146,11 @@ textarea {
 }
 .layout {
   display: grid;
-  grid-template-columns: 280px 1.3fr 0.8fr;
+  grid-template-columns: 1.3fr 0.8fr;
   gap: 2rem;
   padding: 2rem;
+  max-width: 1120px;
+  margin: 0 auto;
 }
 .sidebar {
   background: var(--card);
@@ -177,15 +197,16 @@ body.drawer-open .drawer-backdrop {
   display: block;
 }
 .category-menu {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.6rem;
-  margin-top: 1rem;
+  margin: 0;
 }
 .category-btn {
   border: 0;
   border-radius: 999px;
   padding: 0.7rem 0.9rem;
-  text-align: left;
+  text-align: center;
   background: #f7ece4;
   color: var(--text);
   cursor: pointer;
@@ -357,6 +378,16 @@ body.drawer-open .drawer-backdrop {
 }
 .inventory-btn.delete {
   background: #b42318;
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding-top: 1rem;
+  }
+  .checkout-card {
+    position: static;
+  }
 }
 .inventory-btn.secondary {
   background: #f7ece4;
