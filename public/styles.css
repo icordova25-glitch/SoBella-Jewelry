@@ -216,9 +216,22 @@ body.drawer-open .drawer-backdrop {
   color: white;
 }
 .products {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
   gap: 1rem;
+  padding-bottom: 0.35rem;
+}
+.products::-webkit-scrollbar {
+  height: 10px;
+}
+.products::-webkit-scrollbar-thumb {
+  background: #d8c2a0;
+  border-radius: 999px;
+}
+.products::-webkit-scrollbar-track {
+  background: #f6ede2;
+  border-radius: 999px;
 }
 .product-card, .checkout-card {
   background: var(--card);
@@ -226,6 +239,10 @@ body.drawer-open .drawer-backdrop {
   border-radius: 16px;
   padding: 1rem;
   box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+}
+.product-card {
+  flex: 0 0 min(310px, 82vw);
+  scroll-snap-align: start;
 }
 .product-image {
   width: 100%;
@@ -384,6 +401,9 @@ body.drawer-open .drawer-backdrop {
   .layout {
     grid-template-columns: 1fr;
     padding-top: 1rem;
+  }
+  .product-card {
+    flex-basis: min(280px, 86vw);
   }
   .checkout-card {
     position: static;

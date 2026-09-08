@@ -25,5 +25,14 @@
     "price": 150,
     "stock": 5,
     "image": ""
+  },
+  {
+    "sku": "BRACE-001",
+    "category": "bracelets",
+    "name": "Silver Cuff Bracelet",
+    "description": "A polished bracelet with a timeless finish.",
+    "price": 95,
+    "stock": 7,
+    "image": ""
   }
 ]
