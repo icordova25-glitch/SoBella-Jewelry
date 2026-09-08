@@ -6,6 +6,7 @@ type ProductRow = {
   name: string;
   description: string | null;
   price: number;
+  category: string | null;
   image_urls: string[] | null;
 };
 
