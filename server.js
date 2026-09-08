@@ -30,7 +30,7 @@ const STORAGE_KEYS = {
 const defaultProducts = [
   {
     sku: 'EARR-001',
-    category: 'earings',
+    category: 'earrings',
     name: 'Pearl Drop Earrings',
     description: 'Elegant pearl earrings for special occasions.',
     price: 89,

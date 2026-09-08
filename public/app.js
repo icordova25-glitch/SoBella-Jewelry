@@ -51,9 +51,6 @@ function renderProducts() {
     ? state.products
     : state.products.filter((product) => {
         const category = normalizeCategory(product.category);
-        if (selectedCategory === 'earrings') {
-          return category === 'earrings' || category === 'earings';
-        }
         return category === selectedCategory;
       });
 

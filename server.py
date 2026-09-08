@@ -29,7 +29,7 @@ def resolve_path(path_value):
     return Path(path_value)
 
 DEFAULT_PRODUCTS = [
-    {'sku': 'EARR-001', 'category': 'earings', 'name': 'Pearl Drop Earrings', 'description': 'Elegant pearl earrings for special occasions.', 'price': 89, 'stock': 12},
+    {'sku': 'EARR-001', 'category': 'earrings', 'name': 'Pearl Drop Earrings', 'description': 'Elegant pearl earrings for special occasions.', 'price': 89, 'stock': 12},
     {'sku': 'NECK-001', 'category': 'necklaces', 'name': 'Gold Chain Necklace', 'description': 'Layered gold necklace with a modern finish.', 'price': 120, 'stock': 8},
     {'sku': 'RING-001', 'category': 'rings', 'name': 'Diamond Accent Ring', 'description': 'A refined ring with a subtle sparkle.', 'price': 150, 'stock': 5},
     {'sku': 'BRACE-001', 'category': 'bracelets', 'name': 'Silver Cuff Bracelet', 'description': 'A polished bracelet with a timeless finish.', 'price': 95, 'stock': 7},
@@ -53,7 +53,7 @@ def infer_category(name, sku):
     if 'ring' in name_lower:
         return 'rings'
     if 'ear' in name_lower:
-        return 'earings'
+        return 'earrings'
     if 'brace' in name_lower:
         return 'bracelets'
     return 'necklaces'
