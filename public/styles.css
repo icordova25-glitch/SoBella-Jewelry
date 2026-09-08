@@ -97,24 +97,29 @@ body {
 .category-strip-inner {
   max-width: 1120px;
   margin: 0 auto;
-  background: var(--card);
-  border: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 20% 8%, rgba(255, 252, 247, 0.95) 0%, rgba(255, 252, 247, 0) 42%),
+    linear-gradient(150deg, rgba(255, 251, 245, 0.9) 0%, rgba(246, 234, 216, 0.76) 100%);
+  border: 1px solid rgba(206, 174, 136, 0.42);
   border-radius: 20px;
   padding: 1rem 1.2rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+  box-shadow: 0 12px 28px rgba(110, 80, 45, 0.1);
 }
 .category-strip-inner h2 {
   margin: 0 0 0.8rem;
-  font-size: 1.1rem;
+  font-size: 1rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
+  color: #3f3227;
 }
 .bio-card {
-  background: linear-gradient(135deg, #fffdfb 0%, #fff6ed 100%);
-  border: 1px solid var(--border);
-  border-radius: 24px;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 250, 242, 0.92) 0%, rgba(255, 250, 242, 0) 45%),
+    linear-gradient(140deg, rgba(255, 252, 247, 0.9) 0%, rgba(247, 235, 218, 0.78) 100%);
+  border: 1px solid rgba(206, 174, 136, 0.4);
+  border-radius: 26px;
   padding: 1.5rem 1.75rem;
-  box-shadow: 0 16px 42px rgba(92, 58, 67, 0.08);
+  box-shadow: 0 14px 34px rgba(110, 80, 45, 0.11);
   max-width: 900px;
   margin: 0 auto;
   position: relative;
@@ -124,14 +129,14 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(120deg, rgba(201, 125, 99, 0.12), transparent 60%);
+  background: linear-gradient(112deg, rgba(196, 139, 83, 0.18), rgba(255, 255, 255, 0) 62%);
   pointer-events: none;
 }
 .bio-card h2 {
   margin: 0 0 0.6rem;
   font-size: 1.35rem;
-  letter-spacing: 0.08em;
-  color: var(--text);
+  letter-spacing: 0.11em;
+  color: #3d2f22;
   text-transform: uppercase;
   font-family: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
 }
@@ -139,7 +144,7 @@ body {
   margin: 0;
   line-height: 1.75;
   font-size: 1rem;
-  color: var(--text);
+  color: #4e4034;
   font-family: 'Georgia', 'Times New Roman', serif;
   max-width: 72ch;
   position: relative;
@@ -219,17 +224,25 @@ body.drawer-open .drawer-backdrop {
   margin: 0;
 }
 .category-btn {
-  border: 0;
+  border: 1px solid rgba(191, 157, 116, 0.28);
   border-radius: 999px;
   padding: 0.7rem 0.9rem;
   text-align: center;
-  background: #f7ece4;
-  color: var(--text);
+  background: rgba(255, 248, 240, 0.88);
+  color: #5c4937;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 180ms ease, color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+.category-btn:hover {
+  background: rgba(246, 226, 198, 0.9);
+  border-color: rgba(176, 135, 86, 0.46);
+  transform: translateY(-1px);
 }
 .category-btn.active {
   background: var(--accent-deep);
   color: white;
+  border-color: transparent;
 }
 .products {
   display: grid;
