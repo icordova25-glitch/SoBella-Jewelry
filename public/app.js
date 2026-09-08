@@ -44,9 +44,18 @@ async function loadBusinessBio() {
 function renderProducts() {
   productsEl.innerHTML = '';
 
-  const filteredProducts = state.activeCategory === 'all'
+  const normalizeCategory = (value) => String(value || '').trim().toLowerCase();
+  const selectedCategory = normalizeCategory(state.activeCategory);
+
+  const filteredProducts = selectedCategory === 'all'
     ? state.products
-    : state.products.filter((product) => product.category === state.activeCategory);
+    : state.products.filter((product) => {
+        const category = normalizeCategory(product.category);
+        if (selectedCategory === 'earrings') {
+          return category === 'earrings' || category === 'earings';
+        }
+        return category === selectedCategory;
+      });
 
   filteredProducts.forEach((product) => {
     const card = document.createElement('article');
