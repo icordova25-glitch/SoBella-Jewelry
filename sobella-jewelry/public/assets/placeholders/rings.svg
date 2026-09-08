@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-labelledby="title desc">
+  <title id="title">Rings placeholder</title>
+  <desc id="desc">Cream and gold placeholder art for rings.</desc>
+  <circle cx="400" cy="400" r="246" fill="none" stroke="#c79f67" stroke-opacity="0.72" stroke-width="18"/>
+  <circle cx="400" cy="400" r="124" fill="none" stroke="#1c1814" stroke-opacity="0.68" stroke-width="18"/>
+  <path d="M334 246h132l-24 74H358z" fill="#1c1814" fill-opacity="0.68"/>
+  <path d="M368 196h64l20 50h-104z" fill="#c79f67" fill-opacity="0.78"/>
+</svg>

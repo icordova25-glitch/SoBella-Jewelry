@@ -8,7 +8,6 @@ const NAV_LINKS = [
   { href: "/", label: "Collection" },
   { href: "/products", label: "Shop All" },
   { href: "/cart", label: "Cart" },
-  { href: "/admin", label: "Admin" },
 ];
 
 export default function HeaderNav() {
