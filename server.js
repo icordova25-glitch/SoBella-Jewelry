@@ -261,6 +261,23 @@ function hasKvConfigured() {
   return Boolean(kv && process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 }
 
+function canPersistStore() {
+  if (hasKvConfigured()) {
+    return true;
+  }
+
+  return !process.env.VERCEL;
+}
+
+function getSmtpConfigStatus() {
+  const required = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USERNAME', 'SMTP_PASSWORD', 'SMTP_FROM'];
+  const missing = required.filter((key) => !String(process.env[key] || '').trim());
+  return {
+    configured: missing.length === 0,
+    missing,
+  };
+}
+
 async function readStore(key, filePath, fallback) {
   if (hasKvConfigured()) {
     const value = await kv.get(key);
@@ -278,6 +295,10 @@ async function writeStore(key, filePath, data) {
   if (hasKvConfigured()) {
     await kv.set(key, data);
     return;
+  }
+
+  if (process.env.VERCEL) {
+    throw new Error('Persistent storage is not configured for production. Add KV_REST_API_URL and KV_REST_API_TOKEN in Vercel.');
   }
 
   writeJson(filePath, data);
@@ -523,7 +544,22 @@ app.get('/api/health/storage', (req, res) => {
   const usingKv = hasKvConfigured();
   res.json({
     ok: true,
-    storage: usingKv ? 'kv' : 'file',
+    storage: usingKv ? 'kv' : (process.env.VERCEL ? 'readonly-file' : 'file'),
+    canPersist: canPersistStore(),
+    runtime: process.env.VERCEL ? 'vercel' : 'local',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get('/api/health/email', (req, res) => {
+  const smtp = getSmtpConfigStatus();
+  const hasStripeSecret = Boolean(String(process.env.STRIPE_SECRET_KEY || '').trim());
+
+  res.json({
+    ok: true,
+    smtpConfigured: smtp.configured,
+    smtpMissing: smtp.missing,
+    stripeConfigured: hasStripeSecret,
     runtime: process.env.VERCEL ? 'vercel' : 'local',
     timestamp: new Date().toISOString(),
   });
