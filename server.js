@@ -1,6 +1,8 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const Stripe = require('stripe');
 let kv = null;
 
 try {
@@ -233,6 +235,7 @@ const defaultBankInfo = {
   routingNumber: '',
 };
 
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/backoffice', express.static(backofficeDir));
@@ -279,6 +282,186 @@ async function writeStore(key, filePath, data) {
   writeJson(filePath, data);
 }
 
+function getStripeClient() {
+  const secretKey = String(process.env.STRIPE_SECRET_KEY || '').trim();
+  if (!secretKey) {
+    return null;
+  }
+  return new Stripe(secretKey);
+}
+
+function getCheckoutBaseUrl(req) {
+  const configured = String(process.env.SITE_URL || '').trim();
+  if (configured) {
+    return configured.replace(/\/$/, '');
+  }
+
+  const protocol = String(req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0].trim() || 'https';
+  const host = String(req.headers['x-forwarded-host'] || req.get('host') || '').split(',')[0].trim();
+  return `${protocol}://${host}`.replace(/\/$/, '');
+}
+
+function processPayment(paymentMethod, cardData = {}) {
+  if (paymentMethod !== 'card') {
+    return { success: true, message: 'Bank transfer selected. No card payment required.' };
+  }
+
+  const cardNumber = String(cardData.cardNumber || '').replace(/\s+/g, '');
+  const expiry = String(cardData.expiry || '').trim();
+  const cvc = String(cardData.cvc || '').trim();
+
+  if (cardNumber.length < 12 || cardNumber.length > 19) {
+    return { success: false, message: 'Payment failed: invalid card number.' };
+  }
+  if (cvc.length < 3) {
+    return { success: false, message: 'Payment failed: invalid CVC.' };
+  }
+  if (!expiry.includes('/')) {
+    return { success: false, message: 'Payment failed: invalid expiry date.' };
+  }
+
+  const [expiryMonthRaw, expiryYearRaw] = expiry.split('/', 2);
+  if (!/^\d+$/.test(expiryMonthRaw) || !/^\d+$/.test(expiryYearRaw)) {
+    return { success: false, message: 'Payment failed: invalid expiry date.' };
+  }
+
+  const expiryMonth = Number(expiryMonthRaw);
+  const expiryYear = Number(expiryYearRaw);
+  if (expiryMonth < 1 || expiryMonth > 12) {
+    return { success: false, message: 'Payment failed: invalid expiry month.' };
+  }
+  if (expiryYear < 24) {
+    return { success: false, message: 'Payment failed: card expired.' };
+  }
+  if (cardNumber.endsWith('1111') || cardNumber.endsWith('0000')) {
+    return { success: false, message: 'Payment failed: card was declined.' };
+  }
+
+  return { success: true, message: 'Payment processed successfully.' };
+}
+
+function buildOrderLineItems(products, items) {
+  const inventoryBySku = new Map(products.map((product) => [product.sku, product]));
+  const orderedItems = [];
+
+  for (const item of items) {
+    const product = inventoryBySku.get(item.sku);
+
+    if (!product) {
+      throw new Error(`Product ${item.sku} was not found.`);
+    }
+
+    const quantity = Math.max(1, Number(item.quantity || 1));
+    if (product.stock < quantity) {
+      throw new Error(`Not enough stock for ${product.name}.`);
+    }
+
+    orderedItems.push({
+      sku: product.sku,
+      name: product.name,
+      quantity,
+      price: product.price,
+      lineTotal: product.price * quantity,
+    });
+  }
+
+  return orderedItems;
+}
+
+function buildOrderSummary(orderedItems) {
+  const subtotal = orderedItems.reduce((sum, item) => sum + item.lineTotal, 0);
+  const shipping = subtotal > 0 ? 12 : 0;
+  return {
+    subtotal,
+    shipping,
+    total: subtotal + shipping,
+  };
+}
+
+async function createOrder({ customerName, email, items, paymentMethod = 'card', status = 'paid', source = 'manual', paymentId = null }) {
+  const products = await readStore(STORAGE_KEYS.products, productsPath, defaultProducts);
+  const orderedItems = buildOrderLineItems(products, items);
+
+  for (const lineItem of orderedItems) {
+    const product = products.find((entry) => entry.sku === lineItem.sku);
+    if (product) {
+      product.stock -= lineItem.quantity;
+    }
+  }
+
+  const totals = buildOrderSummary(orderedItems);
+  const orders = await readStore(STORAGE_KEYS.orders, ordersPath, defaultOrders);
+  const newOrder = {
+    id: `ORD-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`,
+    customerName,
+    email,
+    items: orderedItems,
+    paymentMethod,
+    status,
+    total: totals.total,
+    shipping: totals.shipping,
+    source,
+    paymentId,
+    createdAt: new Date().toISOString(),
+  };
+
+  orders.unshift(newOrder);
+  await writeStore(STORAGE_KEYS.products, productsPath, products);
+  await writeStore(STORAGE_KEYS.orders, ordersPath, orders);
+  return newOrder;
+}
+
+async function createCheckoutSession(req, { customerName, email, items, paymentMethod = 'card' }) {
+  const stripeClient = getStripeClient();
+  if (!stripeClient) {
+    const order = await createOrder({ customerName, email, items, paymentMethod, source: 'demo' });
+    return { success: true, order, checkoutUrl: null, demo: true };
+  }
+
+  const products = await readStore(STORAGE_KEYS.products, productsPath, defaultProducts);
+  const orderedItems = buildOrderLineItems(products, items);
+  const totals = buildOrderSummary(orderedItems);
+  const baseUrl = getCheckoutBaseUrl(req);
+  const successUrl = String(process.env.STRIPE_SUCCESS_URL || `${baseUrl}/review?payment=success`).trim();
+  const cancelUrl = String(process.env.STRIPE_CANCEL_URL || `${baseUrl}/review?payment=cancelled`).trim();
+
+  const lineItems = orderedItems.map((item) => ({
+    price_data: {
+      currency: 'usd',
+      product_data: { name: item.name },
+      unit_amount: Math.round(item.price * 100),
+    },
+    quantity: item.quantity,
+  }));
+
+  if (totals.shipping > 0) {
+    lineItems.push({
+      price_data: {
+        currency: 'usd',
+        product_data: { name: 'Shipping' },
+        unit_amount: Math.round(totals.shipping * 100),
+      },
+      quantity: 1,
+    });
+  }
+
+  const session = await stripeClient.checkout.sessions.create({
+    mode: 'payment',
+    line_items: lineItems,
+    customer_email: email,
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    metadata: {
+      customerName,
+      email,
+      items: JSON.stringify(items),
+      paymentMethod,
+    },
+  });
+
+  return { success: true, checkoutUrl: session.url, demo: false };
+}
+
 app.get('/api/products', async (req, res) => {
   const products = await readStore(STORAGE_KEYS.products, productsPath, defaultProducts);
   res.json(products);
@@ -301,52 +484,70 @@ app.post('/api/orders', async (req, res) => {
     return res.status(400).json({ error: 'Please complete the checkout form.' });
   }
 
-  const products = await readStore(STORAGE_KEYS.products, productsPath, defaultProducts);
-  const inventoryBySku = new Map(products.map((product) => [product.sku, product]));
-  const orderedItems = [];
+  try {
+    const order = await createOrder({ customerName, email, items, paymentMethod, source: 'manual' });
+    res.json({ success: true, order });
+  } catch (error) {
+    res.status(400).json({ error: error.message || 'Could not create order.' });
+  }
+});
 
-  for (const item of items) {
-    const product = inventoryBySku.get(item.sku);
+app.post('/api/checkout/create-session', async (req, res) => {
+  const { customerName, email, items, paymentMethod = 'card', cardData = {} } = req.body || {};
 
-    if (!product) {
-      return res.status(400).json({ error: `Product ${item.sku} was not found.` });
-    }
-
-    if (product.stock < item.quantity) {
-      return res.status(400).json({ error: `Not enough stock for ${product.name}.` });
-    }
-
-    product.stock -= item.quantity;
-    orderedItems.push({
-      sku: product.sku,
-      name: product.name,
-      quantity: item.quantity,
-      price: product.price,
-      lineTotal: product.price * item.quantity,
-    });
+  if (!customerName || !email || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Please complete the checkout form.' });
   }
 
-  const subtotal = orderedItems.reduce((sum, item) => sum + item.lineTotal, 0);
-  const shipping = subtotal > 0 ? 12 : 0;
-  const total = subtotal + shipping;
+  if (paymentMethod === 'card') {
+    const paymentResult = processPayment(paymentMethod, cardData);
+    if (!paymentResult.success) {
+      return res.status(400).json({ success: false, error: paymentResult.message });
+    }
+  }
 
-  const orders = await readStore(STORAGE_KEYS.orders, ordersPath, defaultOrders);
-  const newOrder = {
-    id: `ORD-${Date.now()}`,
-    customerName,
-    email,
-    items: orderedItems,
-    paymentMethod: paymentMethod || 'card',
-    status: 'paid',
-    total,
-    createdAt: new Date().toISOString(),
-  };
+  try {
+    const result = await createCheckoutSession(req, { customerName, email, items, paymentMethod });
+    res.json({ ...result, paymentStatus: 'processed' });
+  } catch (error) {
+    res.status(400).json({ error: error.message || 'Could not create checkout session.' });
+  }
+});
 
-  orders.unshift(newOrder);
-  await writeStore(STORAGE_KEYS.products, productsPath, products);
-  await writeStore(STORAGE_KEYS.orders, ordersPath, orders);
+app.post('/api/stripe/webhook', async (req, res) => {
+  const stripeClient = getStripeClient();
+  const webhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || '').trim();
 
-  res.json({ success: true, order: newOrder });
+  if (!stripeClient || !webhookSecret) {
+    return res.status(400).json({ error: 'Stripe is not configured.' });
+  }
+
+  let event;
+  try {
+    event = stripeClient.webhooks.constructEvent(req.body, req.headers['stripe-signature'], webhookSecret);
+  } catch (error) {
+    return res.status(400).json({ error: error.message || 'Invalid webhook signature.' });
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const metadata = session.metadata || {};
+
+    try {
+      await createOrder({
+        customerName: metadata.customerName || '',
+        email: metadata.email || '',
+        items: JSON.parse(metadata.items || '[]'),
+        paymentMethod: metadata.paymentMethod || 'card',
+        source: 'stripe',
+        paymentId: session.id,
+      });
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Unable to finalize order.' });
+    }
+  }
+
+  res.json({ received: true });
 });
 
 app.get('/api/orders', async (req, res) => {
