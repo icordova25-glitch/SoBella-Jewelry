@@ -2,11 +2,15 @@ const state = {
   products: [],
   cart: [],
   activeCategory: 'all',
+  heroSlides: [],
+  activeHeroSlideIndex: 0,
 };
 
 const productsEl = document.getElementById('products');
 const cartSection = document.querySelector('.checkout-card');
 const statusMessage = document.getElementById('statusMessage');
+const heroSlidesEl = document.getElementById('heroSlides');
+const heroSlideDotsEl = document.getElementById('heroSlideDots');
 const productRefreshChannel = window.BroadcastChannel ? new BroadcastChannel('sobella-products') : null;
 const categoryButtons = document.querySelectorAll('.category-btn');
 const mobileCategoryToggle = document.getElementById('mobileCategoryToggle');
@@ -15,9 +19,23 @@ const drawerBackdrop = document.getElementById('drawerBackdrop');
 const drawerClose = document.getElementById('drawerClose');
 const businessBioEl = document.getElementById('businessBio');
 const apiBase = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
+const heroSlidesApiBase = window.location.protocol === 'file:' ? 'http://localhost:3001' : 'https://www.sobellajewelrycoadmin.com';
+const fallbackHeroSlides = [
+  { id: 'slide-1', image: '/assets/logo/sobella-logo.svg', alt: 'SOBELLA JEWELRY CO. logo' },
+  { id: 'slide-2', image: '/assets/placeholders/gallery/gallery-1.svg', alt: 'SOBELLA hero slide 2' },
+  { id: 'slide-3', image: '/assets/placeholders/gallery/gallery-2.svg', alt: 'SOBELLA hero slide 3' },
+  { id: 'slide-4', image: '/assets/placeholders/gallery/gallery-3.svg', alt: 'SOBELLA hero slide 4' },
+  { id: 'slide-5', image: '/assets/placeholders/gallery/gallery-4.svg', alt: 'SOBELLA hero slide 5' },
+  { id: 'slide-6', image: '/assets/placeholders/gallery/gallery-5.svg', alt: 'SOBELLA hero slide 6' },
+];
+let heroSlideIntervalId = null;
 
 function apiUrl(path) {
   return `${apiBase}${path}`;
+}
+
+function heroSlidesUrl(path) {
+  return `${heroSlidesApiBase}${path}`;
 }
 
 function notifyProductRefresh() {
@@ -39,6 +57,81 @@ async function loadBusinessBio() {
   if (businessBioEl) {
     businessBioEl.textContent = data.bio || 'A modern jewelry studio crafting elegant pieces with timeless beauty.';
   }
+}
+
+function renderHeroSlides() {
+  if (!heroSlidesEl || !heroSlideDotsEl) {
+    return;
+  }
+
+  const slides = state.heroSlides.length ? state.heroSlides : fallbackHeroSlides;
+  heroSlidesEl.innerHTML = '';
+  heroSlideDotsEl.innerHTML = '';
+
+  slides.forEach((slide, index) => {
+    const image = document.createElement('img');
+    image.className = `hero-slide${index === state.activeHeroSlideIndex ? ' active' : ''}`;
+    image.src = slide.image;
+    image.alt = slide.alt;
+    image.loading = index === 0 ? 'eager' : 'lazy';
+    heroSlidesEl.appendChild(image);
+
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = `hero-slide-dot${index === state.activeHeroSlideIndex ? ' active' : ''}`;
+    dot.setAttribute('aria-label', `Go to slide ${index + 1}`);
+    dot.addEventListener('click', () => {
+      state.activeHeroSlideIndex = index;
+      updateActiveHeroSlide();
+      startHeroSlideshow();
+    });
+    heroSlideDotsEl.appendChild(dot);
+  });
+
+  updateActiveHeroSlide();
+}
+
+function updateActiveHeroSlide() {
+  const slideElements = heroSlidesEl?.querySelectorAll('.hero-slide') || [];
+  const dotElements = heroSlideDotsEl?.querySelectorAll('.hero-slide-dot') || [];
+  slideElements.forEach((slide, index) => {
+    slide.classList.toggle('active', index === state.activeHeroSlideIndex);
+  });
+  dotElements.forEach((dot, index) => {
+    dot.classList.toggle('active', index === state.activeHeroSlideIndex);
+  });
+}
+
+function startHeroSlideshow() {
+  if (heroSlideIntervalId) {
+    window.clearInterval(heroSlideIntervalId);
+  }
+
+  const slides = state.heroSlides.length ? state.heroSlides : fallbackHeroSlides;
+  if (slides.length <= 1) {
+    return;
+  }
+
+  heroSlideIntervalId = window.setInterval(() => {
+    state.activeHeroSlideIndex = (state.activeHeroSlideIndex + 1) % slides.length;
+    updateActiveHeroSlide();
+  }, 4000);
+}
+
+async function loadHeroSlides() {
+  try {
+    const response = await fetch(heroSlidesUrl('/api/hero-slides'));
+    if (!response.ok) {
+      throw new Error(`Hero slides request failed with status ${response.status}`);
+    }
+    const slides = await response.json();
+    state.heroSlides = Array.isArray(slides) && slides.length ? slides.slice(0, 6) : fallbackHeroSlides;
+  } catch (error) {
+    state.heroSlides = fallbackHeroSlides;
+  }
+  state.activeHeroSlideIndex = 0;
+  renderHeroSlides();
+  startHeroSlideshow();
 }
 
 function renderProducts() {
@@ -217,4 +310,5 @@ loadCart();
 showReviewAndPay();
 loadProducts();
 loadBusinessBio();
+loadHeroSlides();
 renderCart();
