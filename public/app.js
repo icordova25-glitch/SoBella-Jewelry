@@ -63,7 +63,6 @@ function renderProducts() {
       <h3>${product.name}</h3>
       <p>${product.description}</p>
       <p class="price">$${product.price}</p>
-      <p>In stock: ${product.stock}</p>
       <div class="product-actions">
         ${product.image ? `<button class="secondary-btn" data-action="view" data-image="${product.image}">View</button>` : ''}
         <button data-sku="${product.sku}">Add to cart</button>
