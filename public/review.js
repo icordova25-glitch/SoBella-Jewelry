@@ -76,7 +76,7 @@ function loadCheckoutInfo() {
 }
 
 function updateCardFieldsVisibility() {
-  const isCard = paymentMethodSelect.value === 'card';
+  const isCard = !paymentMethodSelect || paymentMethodSelect.value === 'card';
   cardFields.hidden = !isCard;
 }
 

@@ -52,10 +52,8 @@
 
           <div class="checkout-section">
             <h3>Payment</h3>
-            <select name="paymentMethod" id="paymentMethod">
-              <option value="card">Credit card</option>
-              <option value="bank">Bank transfer</option>
-            </select>
+            <input type="hidden" name="paymentMethod" id="paymentMethod" value="card" />
+            <p class="section-copy">Secure card checkout is currently the only supported payment method.</p>
             <div id="cardFields" class="card-fields">
               <input type="text" name="cardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="Card number" />
               <div class="card-row">
