@@ -90,6 +90,7 @@ body {
 }
 .bio-section {
   padding: 0 2rem 2.25rem;
+  width: 100%;
 }
 .category-strip {
   padding: 0 2rem 1.2rem;
@@ -134,8 +135,8 @@ body {
 }
 .bio-card h2 {
   margin: 0 0 0.6rem;
-  font-size: 1.35rem;
-  letter-spacing: 0.11em;
+  font-size: clamp(1.45rem, 2vw, 1.95rem);
+  letter-spacing: 0.14em;
   color: #3d2f22;
   text-transform: uppercase;
   font-family: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
@@ -149,6 +150,12 @@ body {
   max-width: 72ch;
   position: relative;
   z-index: 1;
+}
+.hero .bio-section {
+  padding: 0 0 1.1rem;
+}
+.hero .bio-card {
+  max-width: 1120px;
 }
 .admin-section {
   margin-bottom: 1.5rem;
