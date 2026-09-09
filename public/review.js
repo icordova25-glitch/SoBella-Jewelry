@@ -6,6 +6,7 @@ const cardFields = document.getElementById('cardFields');
 const paymentStatusPanel = document.getElementById('paymentStatusPanel');
 const shippingAddressSection = document.getElementById('shippingAddressSection');
 const sameShippingAddressCheckbox = document.querySelector('input[name="sameShippingAddress"]');
+const reviewPageUrl = new URL(window.location.href);
 
 function loadCart() {
   try {
@@ -97,6 +98,27 @@ function showPaymentStatus(message, isSuccess) {
   paymentStatusPanel.hidden = false;
   paymentStatusPanel.textContent = message;
   paymentStatusPanel.className = `payment-status-panel ${isSuccess ? 'success' : 'error'}`;
+}
+
+function applyCheckoutReturnState() {
+  const paymentState = reviewPageUrl.searchParams.get('payment');
+  if (!paymentState) {
+    return;
+  }
+
+  if (paymentState === 'success') {
+    statusMessage.textContent = 'Payment complete. Your order is being prepared.';
+    showPaymentStatus('Payment complete. You will receive an order confirmation shortly.', true);
+    saveCart([]);
+    localStorage.removeItem('sobella-checkout-info');
+    renderReview();
+    checkoutForm.reset();
+  }
+
+  if (paymentState === 'cancelled') {
+    statusMessage.textContent = 'Checkout was cancelled. Your bag is still saved.';
+    showPaymentStatus('Payment was not completed. You can review your details and try again.', false);
+  }
 }
 
 function renderReview() {
@@ -226,3 +248,4 @@ loadCheckoutInfo();
 updateCardFieldsVisibility();
 updateShippingAddressVisibility();
 renderReview();
+applyCheckoutReturnState();

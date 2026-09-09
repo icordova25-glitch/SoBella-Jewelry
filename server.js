@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const Stripe = require('stripe');
 let kv = null;
 
@@ -290,6 +291,24 @@ function getStripeClient() {
   return new Stripe(secretKey);
 }
 
+function createMailerTransport() {
+  const host = String(process.env.SMTP_HOST || '').trim();
+  if (!host) {
+    return null;
+  }
+
+  const port = Number(process.env.SMTP_PORT || 587);
+  const username = String(process.env.SMTP_USERNAME || '').trim();
+  const password = String(process.env.SMTP_PASSWORD || '').trim();
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: String(process.env.SMTP_SECURE || '').trim() === 'true' || port === 465,
+    auth: username && password ? { user: username, pass: password } : undefined,
+  });
+}
+
 function getCheckoutBaseUrl(req) {
   const configured = String(process.env.SITE_URL || '').trim();
   if (configured) {
@@ -376,6 +395,39 @@ function buildOrderSummary(orderedItems) {
     shipping,
     total: subtotal + shipping,
   };
+}
+
+async function sendOrderConfirmation(order) {
+  const transporter = createMailerTransport();
+  if (!transporter) {
+    return { sent: false, reason: 'SMTP not configured' };
+  }
+
+  const from = String(process.env.SMTP_FROM || 'no-reply@sobella.com').trim();
+  const itemsSummary = order.items
+    .map((item) => `- ${item.name} x${item.quantity} ($${item.lineTotal})`)
+    .join('\n');
+
+  await transporter.sendMail({
+    from,
+    to: order.email,
+    subject: `Your SoBella Jewelry order ${order.id} is confirmed`,
+    text: [
+      `Hi ${order.customerName},`,
+      '',
+      `Your order ${order.id} has been confirmed.`,
+      '',
+      'Items:',
+      itemsSummary,
+      '',
+      `Shipping: $${order.shipping || 0}`,
+      `Total: $${order.total}`,
+      '',
+      'We will send tracking details as soon as your jewelry ships.',
+    ].join('\n'),
+  });
+
+  return { sent: true };
 }
 
 async function createOrder({ customerName, email, items, paymentMethod = 'card', status = 'paid', source = 'manual', paymentId = null }) {
@@ -486,6 +538,11 @@ app.post('/api/orders', async (req, res) => {
 
   try {
     const order = await createOrder({ customerName, email, items, paymentMethod, source: 'manual' });
+    try {
+      await sendOrderConfirmation(order);
+    } catch (error) {
+      console.error('Order confirmation email failed', error);
+    }
     res.json({ success: true, order });
   } catch (error) {
     res.status(400).json({ error: error.message || 'Could not create order.' });
@@ -508,6 +565,13 @@ app.post('/api/checkout/create-session', async (req, res) => {
 
   try {
     const result = await createCheckoutSession(req, { customerName, email, items, paymentMethod });
+    if (result.order) {
+      try {
+        await sendOrderConfirmation(result.order);
+      } catch (error) {
+        console.error('Demo order confirmation email failed', error);
+      }
+    }
     res.json({ ...result, paymentStatus: 'processed' });
   } catch (error) {
     res.status(400).json({ error: error.message || 'Could not create checkout session.' });
@@ -534,7 +598,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
     const metadata = session.metadata || {};
 
     try {
-      await createOrder({
+      const order = await createOrder({
         customerName: metadata.customerName || '',
         email: metadata.email || '',
         items: JSON.parse(metadata.items || '[]'),
@@ -542,6 +606,11 @@ app.post('/api/stripe/webhook', async (req, res) => {
         source: 'stripe',
         paymentId: session.id,
       });
+      try {
+        await sendOrderConfirmation(order);
+      } catch (error) {
+        console.error('Stripe order confirmation email failed', error);
+      }
     } catch (error) {
       return res.status(400).json({ error: error.message || 'Unable to finalize order.' });
     }
